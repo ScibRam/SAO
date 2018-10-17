@@ -2,10 +2,11 @@
 **  saocore.h - core library concepts and definitions
 **      Seismicity Analysis Organizer high level abstractions
 **
-**  The library operates in RAM with several basic concepts
+**  This library operates in RAM with several basic concepts
 **  Each concept is presented by a C-structure type in this header file
-**  Sets of C-functions described in "src/core/" files work with them:
-**    "saotime.c" - functions to convert and calcule time using Moment concept
+**  Sets of C-functions described in "src/core/" files operates these types:
+**    "saotime.c" - time calculation functions for Moment concept
+**    "saodata.c" - data management functions for Trace concept
 *******************************************************************************/
 #ifndef SAOCORE_H
 #define SAOCORE_H
@@ -13,7 +14,7 @@
 
 
 /*******************************************************************************
-**  <Moment> concept - describes specific moment in time.
+**    <Moment> concept - describes specific moment in time.
 **  Moment structure contain fields for human-readable calendar date:
 **  year, month, day, hour, minute, second. Yet in machine time moment usually
 **  represents as a number of seconds since some moment called "epoch".
@@ -107,5 +108,7 @@ extern int    isTime (short h, short m, short s);
 extern short  getYday (short year, short month, short day);
 extern void   getMonthDay (short* month, short* day, short year, short yday);
 extern int    isMoment (Moment t);
+/******************************************************************************/
+
 /******************************************************************************/
 #endif /* SAOCORE_H */

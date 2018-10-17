@@ -23,8 +23,12 @@ corelib : $(core)
 
 
 # Tools
+
+# Coordinated Universal Time (UTC) Convertion and Calculation Tool
 utc : utc.o $(core)
 	$(CC) -o $(addprefix bin/, $@) $(addprefix lib/obj/, $^) -Ilib
+
+
 
 
 # Actions

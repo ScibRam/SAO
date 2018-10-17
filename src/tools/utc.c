@@ -1,5 +1,5 @@
 /*******************************************************************************
-**  utc.c - Coordinated Universal Time (UTC) Convertion and Calculation Tool
+**  utc.c - Coordinated Universal Time (UTC) Conversion and Calculation Tool
 **      Part of Seismicity Analysis Organizer
 **
 **  Program info and usage described in programInfo(..) functions
@@ -23,7 +23,7 @@ void
 programInfo (int full)
 {
   char *fullinfo =
-  "Coordinated Universal Time (UTC) Convertion and Calculation Tool.\n"
+  "Coordinated Universal Time (UTC) Conversion and Calculation Tool.\n"
   "Convert MOMENT string to epoch time and vice versa.\n"
   "Supported formats of string are listed in a table below.\n"
   "Epoch time is a commonly used machine representation of date&time.\n"
@@ -38,8 +38,8 @@ programInfo (int full)
   "  -h             display this help and exit\n\n"
   "Formats:\n"
   "  ORD  | YYYY-DDD                 | ordinal date\n"
-  "  STD  | YYYY-MM-DD               | standart date format\n"
-  "  SAC  | YYYY-DDD_hhmmss          | usual SAC convertion format\n"
+  "  STD  | YYYY-MM-DD               | standard date format\n"
+  "  SAC  | YYYY-DDD_hhmmss          | usual SAC conversion format\n"
   "  SAO  | YYYY-MM-DD_hhmmss        | default SAO format\n"
   "  ISO  | YYYY-MM-DDThh:mm:ss.sss  | ISO-style string\n\n"
   "Examples:\n\n"
@@ -52,8 +52,8 @@ programInfo (int full)
   "3) Add/subtract one hour to/from moment and return fancy string\n"
   "  $ utc -a 3600 -o ISO 2018-04-12_093000\n"
   "  > 2018-04-12T10:30:00.000\n"
-  "  $ utc -a -3600 -o ISO 2018-04-12_093000\n"
-  "  > 2018-04-12T08:30:00.000\n\n"
+  "  $ utc -o SAC -a -3600 2018-04-12_093000\n"
+  "  > 2018-102_083000\n\n"
   "4) Calculate difference between two dates in seconds/dates\n"
   "  $ utc -b 1960-03-29 1991-08-28\n"
   "  > 991353600.000\n"
@@ -70,8 +70,8 @@ programInfo (int full)
   "Seismicity Analysis Organizer <https://github.com/ScibRam/SAO>.\n";
 
   printf("Usage: utc [OPTION]... MOMENT\n");
-  if (full == 1) printf("%s", fullinfo);
-  else printf("Try './utc -h' for full list of options and examples\n");
+  if (full == 1) printf("%s\n", fullinfo);
+  else printf("Try 'utc -h' for full list of options and examples\n");
   return ;
 }
 /******************************************************************************/
@@ -90,7 +90,7 @@ programInfo (int full)
 **      "SAO"   (-e) option, default format if (-o) not specified
 **      "***"   (-o) option, one of supported formats
 **      "DBD"   (-d) option, days instead of seconds (for difference mode)
-**                           days from EPOCH_0 (for convertion/adding modes)
+**                           days from EPOCH_0 (for conversion/adding modes)
 **  First it process all options and its arguments by getopt(..) function
 **  After program 'mode' and output 'format' decided it reads input MOMENT 't'
 **  If adding mode is on, then first add 'delta' to 't'
@@ -99,10 +99,10 @@ programInfo (int full)
 */
 int main (int argc, char *argv[])
 {
-  Moment t1 = NOT_MOMENT;                   Moment t;
   char *options = "hedb:a:o:1234567890.";   int opt;
   int optdone = 0;                          int mode = 0;
   double delta = 0.0;                       char format[32] = "";
+  Moment t1 = NOT_MOMENT;                   Moment t;
 
   while (optdone != 1) {
     if ((opt = getopt(argc, argv, options)) != -1) {
