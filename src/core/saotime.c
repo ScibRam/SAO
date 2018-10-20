@@ -25,40 +25,39 @@
 **      OUT: New Moment structure
 **      IN:  Epoch time (seconds since EPOCH_0)
 **  The main idea here is to first split a big number on date and time parts
-**  A: Calc number of full days between EPOCH_0 and the moment
-**  B: Sign if the moment before (-1) or after (+1) EPOCH_0
-**  C: Calc residual seconds since beginnig of moment day and moment itself
-**  D: Calc date part of the moment by consecutive subtraction from 'days'
-**  E: Checking the number of days in a year to substract
-**  F: Usign a sign to add or substract a year and remove 'ndays' from 'days'
-**  G: In case 'days' ends to be negative (epoch<0), repeat F-G once more
-**  H: Getting the date part of the moment by using support function
-**  I: Simple subtractions to get time part of the moment step by step
-**  J: Little trick with multiplication for proper milliseconds calculation
+**  We calc number of full days between EPOCH_0 and the moment
+**  Next we calc the residual seconds of the day itself
+**  Calc date part of the moment by consecutive subtraction from 'days'
+**  Every time we checking number of days in a next year to substract
+**  Same for negative days (dates before 1970-01-01)
+**  Getting the date part of the moment by using support function
+**  Finally simple subtractions to get time part of the moment step by step
+**  Little trick with multiplication for proper milliseconds calculation
 */
 Moment
 fromEpoch (double epoch)
 {
-  Moment t = EPOCH_0;   long ndays = 365;
+  Moment t = EPOCH_0;   long dpy = 365;
+  long days = (long)(epoch / 86400);
+  double rs = epoch - (double)(days * 86400);
+  if (rs < 0.0f) { rs += 86400.0;  days += ((days>0)-(days<0)); }
 
-  long days = (long)(epoch / 86400);                                      // A
-  short sg = 1;  if (epoch < 0.0f) sg = -1;                               // B
-  double rs = epoch - (double)(days * 86400);                             // C
-  if (rs < 0.0f) { rs += 86400.0;  days += sg; }                          // C
-  while (abs(days) >= ndays) {                                            // D
-    if ((sg==1 && t.year % 4 == 0) || (sg==-1 && (t.year - 1) % 4 == 0))  // E
-      ndays = 366; else ndays = 365;                                      // E
-    days -= sg * ndays;  t.year += sg;                                    // F
+  if (days > 0) while (days >= dpy) {
+    t.year++;
+    if (t.year % 4 == 0) dpy = 366; else dpy = 365;
+    days -= dpy;
   }
-  if (days < 0) {                                                         // G
-    if ((t.year - 1) % 4 == 0) ndays = 366; else ndays = 365;             // G
-    days -= sg * ndays; t.year += sg;                                     // G
+  else while (days <= -dpy) {
+    days += dpy;
+    t.year--;
+    if ((t.year - 1) % 4 == 0) dpy = 366; else dpy = 365;
   }
-  t.yday = days + 1;    getMonthDay(&t.month, &t.day, t.year, t.yday);    // H
-  t.hour = (int)(rs / 3600.0);                                            // I
-  t.min  = (int)((rs - t.hour * 3600.0) / 60.0);                          // I
-  t.sec  = (int)(rs - t.hour * 3600.0 - t.min * 60.0);                    // I
-  t.msec = (int)(1000.1 * (rs - 3600.0 * t.hour - 60.0 * t.min - t.sec)); // J
+
+  t.yday = days + 1;    getMonthDay(&t.month, &t.day, t.year, t.yday);
+  t.hour = (int)(rs / 3600.0);
+  t.min  = (int)((rs - t.hour * 3600.0) / 60.0);
+  t.sec  = (int)(rs - t.hour * 3600.0 - t.min * 60.0);
+  t.msec = (int)(1000.1 * (rs - 3600.0 * t.hour - 60.0 * t.min - t.sec));
   return t;
 }
 /******************************************************************************/
@@ -69,30 +68,31 @@ fromEpoch (double epoch)
 **      OUT: Epoch time in seconds since EPOCH_0
 **      IN:  Moment structure
 **  In inverse function we again using substraction along with a sign tricks
-**  A: Defining number of years between the moment and EPOCH_0
-**  B: Best way to count number of leap years
-**  C: Check to avoid division by zero
-**  D: Calc number of days in 'years'
-**  E: Calc total number of days to the moment day
-**  F: Multiply by 86400 to define epoch time
-**  G: Finally add time part to return epoch time
+**  Defining number of years between the moment and EPOCH_0
+**  Best way to count number of leap years is to simply go year by year
+**  We need to check years != 0 to avoid division by zero
+**  Then jusy calc number of days in 'years' and total number of days
+**  Multiply it by 86400 to define epoch time
+**  Finally add time part and return epoch time
 */
 double
 toEpoch (Moment t)
 {
   short year;   long days;    int nleaps = 0;
 
-  int years = t.year - EPOCH_0.year;                                      // A
-  if (years < 0) { for (year = EPOCH_0.year; year >= t.year; year--)      // B
-    if (year % 4 == 0) nleaps++;  }                                       // B
-  else { for (year = EPOCH_0.year; year <= t.year; year++)                // B
-    if (year % 4 == 0) nleaps++; }                                        // B
+  int years = t.year - EPOCH_0.year;
+  if (years < 0) {
+    for (year = EPOCH_0.year; year >= t.year; year--)
+    if (year % 4 == 0) nleaps++; }
+  else {
+    for (year = EPOCH_0.year; year <= t.year; year++)
+    if (year % 4 == 0) nleaps++; }
 
-  if (years == 0) days = 0;                                               // C
-  else days = years * 365 + (years/abs(years)) * nleaps;                  // D
-  days +=  (t.yday - 1) - (EPOCH_0.yday - 1);                             // E
-  double epoch = (double)(days * 86400.0);                                // F
-  epoch += (double)(t.hour * 3600 + t.min * 60 + t.sec);                  // G
+  if (years == 0) days = 0;
+  else days = years * 365 + ((years>0)-(years<0)) * nleaps;
+  days +=  (t.yday - 1) - (EPOCH_0.yday - 1);
+  double epoch = (double)(days * 86400.0);
+  epoch += (double)(t.hour * 3600 + t.min * 60 + t.sec);
   return epoch + (double)t.msec / 1000.0;
 }
 /******************************************************************************/
@@ -100,7 +100,7 @@ toEpoch (Moment t)
 
 
 /*******************************************************************************
-**    Add or substract seconds to/from a Moment
+**    Add or substract seconds to/from a Momentto the moment day
 **      OUT: New Moment structure
 **      IN1: Moment structure
 **      IN2: Number of seconds to add (if positive) or substrack (if negative)
