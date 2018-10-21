@@ -40,19 +40,23 @@ fromEpoch (double epoch)
   Moment t = EPOCH_0;   long dpy = 365;
   long days = (long)(epoch / 86400);
   double rs = epoch - (double)(days * 86400);
-  if (rs < 0.0f) { rs += 86400.0;  days += ((days>0)-(days<0)); }
-
+  //printf("days = %d rs = %f\n", days, rs);
+  if (rs < 0.0f) { rs += 86400.0;  days -= 1; }
+  //printf("days = %d rs = %f\n", days, rs);
   if (days > 0) while (days >= dpy) {
+    //printf("days = %d year = %d\n", days, t.year);
+    days -= dpy;
     t.year++;
     if (t.year % 4 == 0) dpy = 366; else dpy = 365;
-    days -= dpy;
   }
-  else while (days <= -dpy) {
+  else do {
+    //printf("days = %d year = %d\n", days, t.year);
     days += dpy;
     t.year--;
     if ((t.year - 1) % 4 == 0) dpy = 366; else dpy = 365;
-  }
+  } while (days < 0);
 
+  //printf("days = %d year = %d\n", days, t.year);
   t.yday = days + 1;    getMonthDay(&t.month, &t.day, t.year, t.yday);
   t.hour = (int)(rs / 3600.0);
   t.min  = (int)((rs - t.hour * 3600.0) / 60.0);
