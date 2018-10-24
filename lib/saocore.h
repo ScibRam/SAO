@@ -6,7 +6,6 @@
 **  Each concept is presented by a C-structure type in this header file
 **  Sets of C-functions described in "src/core/" files operates these types:
 **    "saotime.c" - time calculation functions for Moment concept
-**    "saodata.c" - data management functions for Trace concept
 *******************************************************************************/
 #ifndef SAOCORE_H
 #define SAOCORE_H
@@ -60,14 +59,14 @@ NOT_MOMENT = {0, 0, 0, 0, 0, 0, 0, 0};
 
 /*******************************************************************************
 **    Core functions for working with the Moment concept - "saotime.c"
-**  fromEpoch(..)       - convert epoch time into a Moment structure
-**  toEpoch(..)         - calculate epoch time from a Moment structure
-**  addSecs(..)         - add or substract seconds to/from a Moment
-**  difDays(..)         - calculate difference in days between two Moments
-**  difSecs(..)         - calculate difference in seconds between two Moments
-**  readMoment(..)      - read Moment from a string of supported format
-**  writeMoment(..)     - write Moment to a string of specified format
-**  printMoment(..)     - print Moment to standard output
+**  fromEpoch(..)     - convert epoch time into a Moment structure
+**  toEpoch(..)       - calculate epoch time from a Moment structure
+**  addSecs(..)       - add or substract seconds to/from a Moment
+**  difDays(..)       - calculate difference in days between two Moments
+**  difSecs(..)       - calculate difference in seconds between two Moments
+**  readMoment(..)    - read Moment from a string of supported format
+**  writeMoment(..)   - write Moment to a string of specified format
+**  printMoment(..)   - print Moment to standard output
 */
 Moment
 fromEpoch (double epoch);
@@ -96,19 +95,17 @@ printMoment (Moment t);
 
 
 /*******************************************************************************
-**  Support functions:
-**  isDate(..)      - check that three numbers represent a correct date
-**  isTime(..)      - check that three numbers represent a correct time moment
-**  getMonthDay(..) - determine month and day from the day in a year
-**  getYday(..)     - determine the day in a year from month and day
-**  isMoment(..)    - check if the Moment structure is correct
+**    Support functions:
+**  isDate(..)        - check that three numbers represent correct date
+**  isTime(..)        - check that three numbers represent correct time moment
+**  getMonthDay(..)   - determine month and day from the day in a year
+**  getYday(..)       - determine the day in a year from month and day
+**  isMoment(..)      - check if the Moment structure is correct
 */
 extern int    isDate (short y, short m, short d);
 extern int    isTime (short h, short m, short s);
 extern short  getYday (short year, short month, short day);
 extern void   getMonthDay (short* month, short* day, short year, short yday);
 extern int    isMoment (Moment t);
-/******************************************************************************/
-
 /******************************************************************************/
 #endif /* SAOCORE_H */

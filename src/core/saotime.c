@@ -3,14 +3,14 @@
 **      Part of SAO core library -> see "lib/saocore.h"
 **
 **    Core functions:
-**  fromEpoch(..)       - convert epoch time into a Moment structure
-**  toEpoch(..)         - calculate epoch time from a Moment structure
-**  addSecs(..)         - add or substract seconds to/from a Moment
-**  difDays(..)         - calculate difference in days between two Moments
-**  difSecs(..)         - calculate difference in seconds between two Moments
-**  readMoment(..)      - read Moment from a string of supported format
-**  writeMoment(..)     - write Moment to a string of specified format
-**  printMoment(..)     - print Moment to standard output
+**  fromEpoch(..)     - convert epoch time into a Moment structure
+**  toEpoch(..)       - calculate epoch time from a Moment structure
+**  addSecs(..)       - add or substract seconds to/from a Moment
+**  difDays(..)       - calculate difference in days between two Moments
+**  difSecs(..)       - calculate difference in seconds between two Moments
+**  readMoment(..)    - read Moment from a string of supported format
+**  writeMoment(..)   - write Moment to a string of specified format
+**  printMoment(..)   - print Moment to standard output
 **
 *******************************************************************************/
 #include <stdlib.h>
@@ -40,23 +40,18 @@ fromEpoch (double epoch)
   Moment t = EPOCH_0;   long dpy = 365;
   long days = (long)(epoch / 86400);
   double rs = epoch - (double)(days * 86400);
-  //printf("days = %d rs = %f\n", days, rs);
   if (rs < 0.0f) { rs += 86400.0;  days -= 1; }
-  //printf("days = %d rs = %f\n", days, rs);
   if (days > 0) while (days >= dpy) {
-    //printf("days = %d year = %d\n", days, t.year);
     days -= dpy;
     t.year++;
     if (t.year % 4 == 0) dpy = 366; else dpy = 365;
   }
   else do {
-    //printf("days = %d year = %d\n", days, t.year);
     days += dpy;
     t.year--;
     if ((t.year - 1) % 4 == 0) dpy = 366; else dpy = 365;
   } while (days < 0);
 
-  //printf("days = %d year = %d\n", days, t.year);
   t.yday = days + 1;    getMonthDay(&t.month, &t.day, t.year, t.yday);
   t.hour = (int)(rs / 3600.0);
   t.min  = (int)((rs - t.hour * 3600.0) / 60.0);
@@ -154,6 +149,15 @@ difDays (Moment t2, Moment t1)
 **    Read Moment from a string of supported format
 **      OUT: New Moment struct
 **      IN:  String of supported format (see in saocore.h)
+**  First we check how long input string is
+**  Then just checking blocks of date and time one by one
+**  Variable 'shift' is used to account for ordinal and ISO representation
+**  While it is obvious that buf[i] means from code, here are separators:
+**    buf[4] - separator of year and day/month always
+**    buf[7] - separator of month and day for normal date representation
+**    buf[8+shift] - separator of date and time parts
+**    buf[11+shift] & buf[14+shift] - separators of time parts for ISO format
+**    buf[15+shift] - separator of millesecond part for ISO format
 */
 Moment
 readMoment (const char *buf)
@@ -165,27 +169,27 @@ readMoment (const char *buf)
   tmp2[2] = '\0'; tmp3[3] = '\0'; tmp4[4] = '\0';
 
   if (len > 4 &&
-  (buf[0] >= 0x30 && buf[0] <= 0x39) &&                 // 0-9  year
-  (buf[1] >= 0x30 && buf[1] <= 0x39) &&                 // 0-9  year
-  (buf[2] >= 0x30 && buf[2] <= 0x39) &&                 // 0-9  year
-  (buf[3] >= 0x30 && buf[3] <= 0x39)) {                 // 0-9  year
+  (buf[0] >= 0x30 && buf[0] <= 0x39) &&
+  (buf[1] >= 0x30 && buf[1] <= 0x39) &&
+  (buf[2] >= 0x30 && buf[2] <= 0x39) &&
+  (buf[3] >= 0x30 && buf[3] <= 0x39)) {
     t.year  = atoi(memcpy(tmp4, buf + 0, 4));
   }
   else goto wrongfmt;
-                                                        // buf[4] - separator
+
   if (len > 7 &&
-  (buf[5] >= 0x30 && buf[5] <= 0x33) &&                 // 0-3  day of year
-  (buf[6] >= 0x30 && buf[6] <= 0x39) &&                 // 0-9  day of year
-  (buf[7] >= 0x30 && buf[5] <= 0x39)) {                 // 0-9  day of year
+  (buf[5] >= 0x30 && buf[5] <= 0x33) &&
+  (buf[6] >= 0x30 && buf[6] <= 0x39) &&
+  (buf[7] >= 0x30 && buf[5] <= 0x39)) {
     t.yday = atoi(memcpy(tmp3, buf + 5, 3));
     getMonthDay(&t.month, &t.day, t.year, t.yday);
   }
   else if (len > 9 &&
-  (buf[5] >= 0x30 && buf[5] <= 0x31) &&                 // 0-1  month
-  (buf[6] >= 0x30 && buf[6] <= 0x39) &&                 // 0-9  month
-                                                        // buf[7] - separator
-  (buf[8] >= 0x30 && buf[5] <= 0x33) &&                 // 0-3  day
-  (buf[9] >= 0x30 && buf[6] <= 0x39)) {                 // 0-9  day
+  (buf[5] >= 0x30 && buf[5] <= 0x31) &&
+  (buf[6] >= 0x30 && buf[6] <= 0x39) &&
+
+  (buf[8] >= 0x30 && buf[5] <= 0x33) &&
+  (buf[9] >= 0x30 && buf[6] <= 0x39)) {
     t.month = atoi(memcpy(tmp2, buf + 5, 2));
     t.day   = atoi(memcpy(tmp2, buf + 8, 2));
     t.yday  = getYday(t.year, t.month, t.day);
@@ -194,39 +198,38 @@ readMoment (const char *buf)
   else goto wrongfmt;
 
   if (len == 8+shift) goto strdone;
-            // else means buf[8+shift] - separator ('_' or 'T', usually)
 
   if (len > 14+shift &&
-  (buf[ 9+shift] >= 0x30 && buf[ 9+shift] <= 0x32) &&   // 0-2  hour
-  (buf[10+shift] >= 0x30 && buf[10+shift] <= 0x39) &&   // 0-9  hour
-  (buf[11+shift] >= 0x30 && buf[11+shift] <= 0x35) &&   // 0-5  min
-  (buf[12+shift] >= 0x30 && buf[12+shift] <= 0x39) &&   // 0-9  min
-  (buf[13+shift] >= 0x30 && buf[13+shift] <= 0x35) &&   // 0-5  sec
-  (buf[14+shift] >= 0x30 && buf[14+shift] <= 0x39)) {   // 0-9  sec
+  (buf[ 9+shift] >= 0x30 && buf[ 9+shift] <= 0x32) &&
+  (buf[10+shift] >= 0x30 && buf[10+shift] <= 0x39) &&
+  (buf[11+shift] >= 0x30 && buf[11+shift] <= 0x35) &&
+  (buf[12+shift] >= 0x30 && buf[12+shift] <= 0x39) &&
+  (buf[13+shift] >= 0x30 && buf[13+shift] <= 0x35) &&
+  (buf[14+shift] >= 0x30 && buf[14+shift] <= 0x39)) {
     t.hour = atoi(memcpy(tmp2, buf +  9 + shift, 2));
     t.min  = atoi(memcpy(tmp2, buf + 11 + shift, 2));
     t.sec  = atoi(memcpy(tmp2, buf + 13 + shift, 2));
   }
   else if (len > 16+shift &&
-  (buf[ 9+shift] >= 0x30 && buf[ 9+shift] <= 0x32) &&   // 0-2  hour
-  (buf[10+shift] >= 0x30 && buf[10+shift] <= 0x39) &&   // 0-9  hour
-                                                        // buf[11+shift] - sep
-  (buf[12+shift] >= 0x30 && buf[12+shift] <= 0x35) &&   // 0-5  min
-  (buf[13+shift] >= 0x30 && buf[13+shift] <= 0x39) &&   // 0-9  min
-                                                        // buf[14+shift] - sep
-  (buf[15+shift] >= 0x30 && buf[15+shift] <= 0x35) &&   // 0-5  sec
-  (buf[16+shift] >= 0x30 && buf[16+shift] <= 0x39)) {   // 0-9  sec
+  (buf[ 9+shift] >= 0x30 && buf[ 9+shift] <= 0x32) &&
+  (buf[10+shift] >= 0x30 && buf[10+shift] <= 0x39) &&
+
+  (buf[12+shift] >= 0x30 && buf[12+shift] <= 0x35) &&
+  (buf[13+shift] >= 0x30 && buf[13+shift] <= 0x39) &&
+
+  (buf[15+shift] >= 0x30 && buf[15+shift] <= 0x35) &&
+  (buf[16+shift] >= 0x30 && buf[16+shift] <= 0x39)) {
     t.hour = atoi(memcpy(tmp2, buf +  9 + shift, 2));
     t.min  = atoi(memcpy(tmp2, buf + 12 + shift, 2));
     t.sec  = atoi(memcpy(tmp2, buf + 15 + shift, 2));
     shift += 2;
   }
   else goto wrongfmt;
-                                                        // buf[15+shift] - sep
+
   if (len == 19+shift &&
-  (buf[16+shift] >= 0x30 && buf[16+shift] <= 0x39) &&   // 0-9  msec
-  (buf[17+shift] >= 0x30 && buf[17+shift] <= 0x39) &&   // 0-9  msec
-  (buf[18+shift] >= 0x30 && buf[18+shift] <= 0x39)) {   // 0-9  msec
+  (buf[16+shift] >= 0x30 && buf[16+shift] <= 0x39) &&
+  (buf[17+shift] >= 0x30 && buf[17+shift] <= 0x39) &&
+  (buf[18+shift] >= 0x30 && buf[18+shift] <= 0x39)) {
     t.msec = atoi(memcpy(tmp3, buf + 16 + shift, 3));
   }
 strdone:
@@ -299,11 +302,11 @@ printMoment (Moment t)
   fprintf(stdout,"\t%d hour, %d minute, %d second\n", t.hour, t.min, t.sec);
   fprintf(stdout,"\t%d milliseconds", t.msec);
   fprintf(stdout,"\t%d day in the year\n", t.yday);
-  fprintf(stderr, "\tThe structure at %p adress ", &t);
+  fprintf(stderr, "\tThe structure at %p ", &t);
   if (isMoment(t) == 1)
-    fprintf(stderr, "is a correct Moment.\n");
+    fprintf(stderr, "is a correct Moment\n");
   else
-    fprintf(stderr, "is INCORRECT.\n");
+    fprintf(stderr, "is INCORRECT\n");
 }
 /******************************************************************************/
 
@@ -311,11 +314,11 @@ printMoment (Moment t)
 
 /*******************************************************************************
 **  Support functions:
-**  isDate(..)      - check that three numbers represent a correct date
-**  isTime(..)      - check that three numbers represent a correct time moment
-**  getMonthDay(..) - determine month and day from the day in a year
-**  getYday(..)     - determine the day in a year from month and day
-**  isMoment(..)    - check if the Moment structure is correct
+**  isDate(..)        - check that three numbers represent correct date
+**  isTime(..)        - check that three numbers represent correct time moment
+**  getMonthDay(..)   - determine month and day from the day in a year
+**  getYday(..)       - determine the day in a year from month and day
+**  isMoment(..)      - check if the Moment structure is correct
 */
 
 /*  Support constants - days before month's begin in a normal/leap year  */
